@@ -159,7 +159,7 @@ class TextSearcher:
         print(f"Searching using columns: {query_columns}")
         
         for _, query_row in self.queries.iterrows():
-            for col in query_columns:
+            for col in query_columns: # col potentially contans the language name
                 if pd.isna(query_row[col]):
                     continue
                 
@@ -174,9 +174,10 @@ class TextSearcher:
                 elif col.lower() in ['french', 'fr']:
                     language_filter = 'fre'
                 
+                print(f"Querying with query word: {query_word} in {col}")
                 # Search for this query word
                 results = self.search_text(query_word, language_filter, context_words)
-                
+                print(f"    Search returned {len(results)} results")
                 for result in results:
                     result['query_language'] = col
                     all_results.append(result)
@@ -195,7 +196,7 @@ class TextSearcher:
         for (itemid, query_word), group in results_df.groupby(['itemid', 'query_word']):
             # Concatenate contexts
             contexts = group['context'].tolist()
-            combined_context = " | ".join([ctx for ctx in contexts if ctx])
+            combined_context = " \n ".join([ctx for ctx in contexts if ctx])
             
             grouped_result = {
                 'itemid': itemid,
@@ -263,7 +264,8 @@ if __name__ == "__main__":
         print(f"Languages found: {results['language'].unique()}")
         print(f"Query words that found matches: {results['query_word'].nunique()}")
 
-        # TODO: destitution is the same for English and French and the script seems to search French but says the result was found after searching English 
+        # TODO: destitution is the same for English and French and the script seems to not to return results in French 
+        # An example is case 20261/12 Baka v. Hungary, only in French, see https://hudoc.echr.coe.int/?i=001-164530
     
     # ---- EXAMPLE USE ----
     # # Example of searching for a specific word
