@@ -16,9 +16,9 @@ class DestitutionFr(unittest.TestCase):
         )
 
     def test_destitution(self):
-        results = self.searcher.search_text(query_word='destitution', language_filter='FRE')
-        pprint.pprint(results)
-        print(f"Keys: \n {results[-1].keys()}")
+        # results = self.searcher.search_text(query_word='destitution', language_filter='FRE')
+        results = self.searcher.search_text(query_word='dénuement', language_filter='FRE')
+        pprint.pprint(results[-1])
         # Looks like the query word is mistakenly printed as the entire text
         self.assertGreater(len(results), 0)
 

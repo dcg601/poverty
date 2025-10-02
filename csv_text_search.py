@@ -174,7 +174,7 @@ class TextSearcher:
                 elif col.lower() in ['french', 'fr']:
                     language_filter = 'fre'
                 
-                print(f"Querying with query word: {query_word} in {col}")
+                print(f"Querying with query word: '{query_word}' in {col}")
                 # Search for this query word
                 results = self.search_text(query_word, language_filter, context_words)
                 print(f"    Search returned {len(results)} results")
