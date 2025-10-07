@@ -16,13 +16,21 @@ class MultiWordTest(unittest.TestCase):
             )
 
         def test_subsistance(self):
+              """Test that a multi-word query given as regex is properly highlighted"""
               query = '(moyens de)? subsistance'
             #   query = 'subsistance'
               print(f"Will query with {query}", flush=True)
-              text = str(self.searcher.dataset[FULLTEXT])
-              context = self.searcher.search_text(query_word=query, language_filter='FRE')
-              pprint.pprint(context[0]['combined_context'])
-            #   self.assertGreater(len(context), 0)
+              results = self.searcher.search_text(query_word=query, language_filter='FRE')
+              self.assertIn('**moyens de subsistance**', results[0]['context'])
+
+        def test_aumone(self):
+              """This expression should not return results"""
+              query = "(demander l.)?aumône"
+            
+              print(f"Will query with {query}", flush=True)
+              results = self.searcher.search_text(query_word=query, language_filter='FRE')
+
+              self.assertEqual(len(results),0)
 
 
 if __name__ == '__main__':

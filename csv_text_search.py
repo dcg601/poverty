@@ -44,60 +44,63 @@ class TextSearcher:
         print(f"Loaded queries with {len(self.queries)} rows")
         print(f"Query columns: {list(self.queries.columns)}")
     
+
     def get_context(self, text: str, query: str, context_words: int = 10) -> str:
         """
         Extract context around the found query term.
-        
+
         Args:
             text: The full text where the query was found
-            query: The search term
+            query: The search term (can be a regex, e.g. '(moyens de)? subsistance')
             context_words: Number of words to include before and after the match
-        
+
         Returns:
             Context string with the query term highlighted
         """
-        # Case-insensitive search with word boundaries
-        # pattern = r'\b' + re.escape(query.lower()) + r'\b'
-        pattern = r'\b' + query.lower() + r'\b'
+        # Use the query directly as regex (already supports multi-word)
+        pattern = query.lower()
         text_lower = text.lower()
-        
-        matches = list(re.finditer(pattern, text_lower))
+
+        matches = list(re.finditer(pattern, text_lower, flags=re.IGNORECASE))
         if not matches:
             return ""
-        
+
         contexts = []
         words = text.split()
-        
+
         for match in matches:
-            # Find the word position in the original text
+            # Character position → approximate word position
             char_pos = match.start()
             word_pos = len(text[:char_pos].split()) - 1
             word_pos = max(0, word_pos)
-            
-            # Extract context
+
+            # Extract context window
             start_idx = max(0, word_pos - context_words)
             end_idx = min(len(words), word_pos + context_words + 1)
-            
             context_words_list = words[start_idx:end_idx]
-            
-            # Highlight the matching word(s)
-            highlighted_context = []
-            for i, word in enumerate(context_words_list):
-                if re.search(pattern, word.lower()):
-                    highlighted_context.append(f"**{word}**")
-                else:
-                    highlighted_context.append(word)
-            
-            context = " ".join(highlighted_context)
+
+            # Join to form a context string
+            context_str = " ".join(context_words_list)
+
+            # Highlight the full multi-word match within that context
+            highlighted_context = re.sub(
+                pattern,
+                lambda m: f"**{m.group(0)}**",
+                context_str,
+                flags=re.IGNORECASE
+            )
+
+            # Add ellipses if context is truncated
             if start_idx > 0:
-                context = "..." + context
+                highlighted_context = "..." + highlighted_context
             if end_idx < len(words):
-                context = context + "..."
-            
-            contexts.append(context)
-        
-        return " | ".join(contexts)  # Join multiple contexts with separator
-    
+                highlighted_context = highlighted_context + "..."
+
+            contexts.append(highlighted_context)
+
+        # Combine multiple matches
+        return " | ".join(contexts)
+
     def search_text(self, query_word: str, language_filter: str = None, context_words: int = 10) -> List[Dict]:
         """
         Search for a query word in the dataset.
@@ -107,7 +110,7 @@ class TextSearcher:
             language_filter: Optional language filter ('english', 'french', etc.)
         
         Returns:
-            List of dictionaries containing search results
+            List of dictionaries containing search results. The dictionaries have keys: 'itemid', 'language', 'query_word', 'context', 'fulltext'
         """
         results = []
         

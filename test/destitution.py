@@ -11,16 +11,17 @@ class DestitutionFr(unittest.TestCase):
         super().__init__(methodName)
         self.searcher = TextSearcher(
             dataset_path=r"C:\Users\dcg601\OneDrive - University of Copenhagen\iCourts Projects\ECtHR\DATA\complete_data_ENG_FRE.csv",  # dataset file path
-            queries_path=r"C:\Users\dcg601\OneDrive - University of Copenhagen\iCourts Projects\At the margins\queries_simple.csv",
+            queries_path=r"C:\Users\dcg601\OneDrive - University of Copenhagen\iCourts Projects\At the margins\queries_simple_v2.csv",
             law_path=r"C:\Users\dcg601\OneDrive - University of Copenhagen\iCourts Projects\ECtHR\DATA\THE_LAW\THE_LAW_sections.csv", # path to the Law
         )
 
     def test_destitution(self):
         # results = self.searcher.search_text(query_word='destitution', language_filter='FRE')
         results = self.searcher.search_text(query_word='dénuement', language_filter='FRE')
-        pprint.pprint(results[-1])
+        # pprint.pprint(results[-1])
         # Looks like the query word is mistakenly printed as the entire text
         self.assertGreater(len(results), 0)
+
 
 
 if __name__ == '__main__':
