@@ -6,6 +6,7 @@ import sys
 # Some constants
 FULLTEXT = 'THE_LAW'
 LANGUAGE = 'languageisocode'
+OUTPATH = r"C:\Users\dcg601\OneDrive - University of Copenhagen\iCourts Projects\At the margins\\"
 
 class TextSearcher:
     def __init__(self, dataset_path: str, law_path:str, queries_path: str, rows: int=None):
@@ -56,7 +57,8 @@ class TextSearcher:
             Context string with the query term highlighted
         """
         # Case-insensitive search with word boundaries
-        pattern = r'\b' + re.escape(query.lower()) + r'\b'
+        # pattern = r'\b' + re.escape(query.lower()) + r'\b'
+        pattern = r'\b' + query.lower() + r'\b'
         text_lower = text.lower()
         
         matches = list(re.finditer(pattern, text_lower))
@@ -115,7 +117,13 @@ class TextSearcher:
             search_data = search_data[search_data[LANGUAGE].str.lower() == language_filter.lower()]
         
         # Search in fulltext column
-        pattern = r'\b' + re.escape(query_word.lower()) + r'\b'
+        # TODO check if regexes work
+        # If the query_word looks like a regex pattern (contains special regex chars), use as is; else escape it
+        if re.search(r'[\.\*\+\?\[\]\(\)\{\}\|\\\^\$]', query_word):
+            pattern = r'\b' + query_word.lower() + r'\b' 
+        else:
+            pattern = r'\b' + re.escape(query_word.lower()) + r'\b'
+
         
         for idx, row in search_data.iterrows():
             if pd.isna(row[FULLTEXT]):
@@ -159,12 +167,14 @@ class TextSearcher:
         print(f"Searching using columns: {query_columns}")
         
         for _, query_row in self.queries.iterrows():
-            for col in query_columns: # col potentially contans the language name
+            for col in query_columns: # col potentially contains the language name
                 if pd.isna(query_row[col]):
                     continue
                 
-                query_word = str(query_row[col]).strip()
-                if not query_word:
+                query_word = str(query_row[col]).strip() 
+                print(f"    Querying with query word: '{query_word}' in {col}")
+                if not query_word: # NOTE: mallon edw prepei na tsekarw an apofevgei na kanei query polles fores thn idia le3h
+                    print("\t\tNothing to do continuing")
                     continue
                 
                 # Determine language preference for filtering (optional)
@@ -174,7 +184,6 @@ class TextSearcher:
                 elif col.lower() in ['french', 'fr']:
                     language_filter = 'fre'
                 
-                print(f"Querying with query word: '{query_word}' in {col}")
                 # Search for this query word
                 results = self.search_text(query_word, language_filter, context_words)
                 print(f"    Search returned {len(results)} results")
@@ -192,7 +201,6 @@ class TextSearcher:
         # Group by itemid and query_word to concatenate multiple contexts
         grouped_results = []
         
-        sys.stderr.write(f"Results from {query_word} have returned with lenght:{results_df.shape[0]} rows and columns {results_df.columns}")
         for (itemid, query_word), group in results_df.groupby(['itemid', 'query_word']):
             # Concatenate contexts
             contexts = group['context'].tolist()
@@ -209,7 +217,10 @@ class TextSearcher:
             }
             grouped_results.append(grouped_result)
         
-        return pd.DataFrame(grouped_results)
+        all_results = pd.DataFrame(grouped_results)
+        print(f"Saving all results with columns: {all_results.columns}")
+        all_results.to_csv(f'{OUTPATH}\\search_all_results.csv')
+        return all_results
     
     def save_results(self, results_df: pd.DataFrame, output_path: str = "search_results.csv"):
         """Save results to CSV file."""
@@ -226,14 +237,14 @@ class TextSearcher:
 
 # Example usage
 if __name__ == "__main__":
-    OUTPATH = r"C:\Users\dcg601\OneDrive - University of Copenhagen\iCourts Projects\At the margins\\"
+    
     # Initialize the searcher
     searcher = TextSearcher( # Use "C:\Users\dcg601\OneDrive - University of Copenhagen\iCourts Projects\ECtHR\DATA\THE_LAW\THE_LAW_sections.csv" and join with the other to get the complete dataset
         # Check also if the two datasets have the same timespan
         #   The law is after 2000
         dataset_path=r"C:\Users\dcg601\OneDrive - University of Copenhagen\iCourts Projects\ECtHR\DATA\complete_data_ENG_FRE.csv",  # dataset file path
         law_path=r"C:\Users\dcg601\OneDrive - University of Copenhagen\iCourts Projects\ECtHR\DATA\THE_LAW\THE_LAW_sections.csv", # path to the Law
-        queries_path=rf"{OUTPATH}queries_simple.csv"   # queries file path
+        queries_path=rf"{OUTPATH}queries_simple_v2.csv"   # queries file path
         #rows=5000
     )
     
@@ -250,7 +261,10 @@ if __name__ == "__main__":
             print(f"Language: {row['language']}")
             print(f"Query: '{row['query_word']}' ({row['query_language']})")
             print(f"Matches: {row['match_count']}")
-            print(f"Context: {row['combined_context']}")
+            try:
+                print(f"Context: {str(row['combined_context']).encode('utf-8', errors='replace').decode('utf-8')}")
+            except UnicodeEncodeError:
+                print("Cannot print context now due to UnicodeDecodeError. Continuing to the next result")
             print("-" * 80)
         
         # Save to CSV
