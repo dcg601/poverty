@@ -156,9 +156,9 @@ def display_result_accordion(row, idx):
             
             # Show preview (first 1000 characters)
             if len(law_text) > 1000:
+                st.write(law_text[:1000] + "...")
                 with st.expander("Click to view full text"):
                     st.text_area("Full Text", law_text, height=300, key=f"law_text_{idx}")
-                st.write(law_text[:1000] + "...")
             else:
                 st.write(law_text)
 
@@ -280,14 +280,16 @@ def main():
     if 'filtered_df' not in st.session_state:
         st.session_state.filtered_df = df
         st.session_state.page_num = 0
+    if 'page_size' not in st.session_state:
+        st.session_state.page_size = 25
     
     if clear_button:
         st.session_state.filtered_df = df
         st.session_state.page_num = 0
         st.rerun()
     
-    # Apply filters
-    if search_button or any([law_search, article_search, context_search, year_search, language_filter != "All"]):
+    # Apply filters only when search button is clicked
+    if search_button:
         filtered_df = df.copy()
         
         # Apply THE_LAW filter
@@ -363,8 +365,13 @@ def main():
             page_size = st.selectbox(
                 "Results per page:",
                 options=[5, 10, 25, 50, 100],
-                index=2
+                index=[5, 10, 25, 50, 100].index(st.session_state.page_size),
+                key="page_size_selector"
             )
+            # Update session state if changed
+            if page_size != st.session_state.page_size:
+                st.session_state.page_size = page_size
+                st.session_state.page_num = 0  # Reset to first page when page size changes
         
         # Calculate total pages
         total_pages = (len(results) - 1) // page_size + 1 if len(results) > 0 else 1
@@ -373,12 +380,12 @@ def main():
         col1, col2, col3, col4, col5 = st.columns([1, 1, 2, 1, 1])
         
         with col1:
-            if st.button("⏮️ First", disabled=st.session_state.page_num == 0):
+            if st.button("⏮️ First", key="first_page", disabled=st.session_state.page_num == 0, use_container_width=True):
                 st.session_state.page_num = 0
                 st.rerun()
         
         with col2:
-            if st.button("◀️ Prev", disabled=st.session_state.page_num == 0):
+            if st.button("◀️ Prev", key="prev_page", disabled=st.session_state.page_num == 0, use_container_width=True):
                 st.session_state.page_num -= 1
                 st.rerun()
         
@@ -389,12 +396,12 @@ def main():
             )
         
         with col4:
-            if st.button("Next ▶️", disabled=st.session_state.page_num >= total_pages - 1):
+            if st.button("Next ▶️", key="next_page", disabled=st.session_state.page_num >= total_pages - 1, use_container_width=True):
                 st.session_state.page_num += 1
                 st.rerun()
         
         with col5:
-            if st.button("Last ⏭️", disabled=st.session_state.page_num >= total_pages - 1):
+            if st.button("Last ⏭️", key="last_page", disabled=st.session_state.page_num >= total_pages - 1, use_container_width=True):
                 st.session_state.page_num = total_pages - 1
                 st.rerun()
         
