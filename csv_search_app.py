@@ -7,7 +7,7 @@ from pathlib import Path
 st.set_page_config(page_title="CSV Law Text Search", layout="wide")
 
 # Constants
-EXPECTED_COLUMNS = ['itemid', 'appno', 'language', 'article', 'violation', 'year', 
+EXPECTED_COLUMNS = ['itemid', 'appno', 'docname', 'language', 'article', 'violation', 'year', 
                    'query_word', 'link', 'query_language', 'context', 'match_count', 'THE_LAW']
 
 @st.cache_data
@@ -247,19 +247,27 @@ def main():
         )
     
     with col2:
+        # Context search
+        context_search = st.text_input(
+            "Search in Context:",
+            placeholder="Enter text to search in context...",
+            help="Search for text in the context column"
+        )
+        
         # Year search
         year_search = st.text_input(
             "Search by Year:",
             placeholder="e.g., 2020 or 2015-2020",
             help="Enter a specific year or year range (e.g., 2015-2020)"
         )
-        
-        # Language filter
-        language_filter = st.selectbox(
-            "Filter by Language:",
-            options=["All", "English", "French"],
-            help="Filter results by document language"
-        )
+    
+    # Add a third row for language filter
+    language_filter = st.selectbox(
+        "Filter by Language:",
+        options=["All", "English", "French"],
+        help="Filter results by document language",
+        width=200
+    )
     
     # Search button
     col1, col2, col3 = st.columns([1, 1, 2])
@@ -279,7 +287,7 @@ def main():
         st.rerun()
     
     # Apply filters
-    if search_button or any([law_search, article_search, year_search, language_filter != "All"]):
+    if search_button or any([law_search, article_search, context_search, year_search, language_filter != "All"]):
         filtered_df = df.copy()
         
         # Apply THE_LAW filter
@@ -289,6 +297,10 @@ def main():
         # Apply article filter
         if article_search and 'article' in filtered_df.columns:
             filtered_df = filter_by_text(filtered_df, 'article', article_search, use_regex=False)
+        
+        # Apply context filter
+        if context_search and 'context' in filtered_df.columns:
+            filtered_df = filter_by_text(filtered_df, 'context', context_search, use_regex=True)
         
         # Apply year filter
         if year_search:
@@ -326,7 +338,7 @@ def main():
                 data=csv,
                 file_name="filtered_search_results.csv",
                 mime="text/csv",
-                use_container_width=True
+                width='content'
             )
         
         with col2:
@@ -339,7 +351,7 @@ def main():
                     data=csv_no_law,
                     file_name="filtered_results_summary.csv",
                     mime="text/csv",
-                    use_container_width=True
+                    width='content'
                 )
         
         # Pagination settings
@@ -426,6 +438,7 @@ def main():
     2. **Filter**: Use the search boxes to filter results:
        - Search in THE_LAW column (plain text search with word boundaries)
        - Search by article number or text
+       - Search in context column (plain text search with word boundaries)
        - Filter by year (single year or range like 2015-2020)
        - Filter by language (English/French)
     3. **Browse**: Use pagination controls to navigate through results
@@ -434,7 +447,7 @@ def main():
     
     ### ℹ️ Features:
     - ✅ File upload or manual path input
-    - ✅ Multiple search filters (THE_LAW, article, year, language)
+    - ✅ Multiple search filters (THE_LAW, article, context, year, language)
     - ✅ Plain text search with word boundaries
     - ✅ Accordion display with full case details
     - ✅ Pagination with customizable page sizes
