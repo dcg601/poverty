@@ -165,15 +165,15 @@ def display_result_accordion(row, idx):
             unique_key = f"{itemid_part}_{query_sanitized}" if query_part else str(itemid_part)
             
             if len(law_text) > 1000:
-                st.write(law_text[:1000] + "...")
+                st.write(law_text[:1000] + "... (continued)")
                 with st.expander("Click to view full text"):
                     st.text_area("Full Text", law_text, height=300, key=f"law_text_{unique_key}")
             else:
                 st.write(law_text)
 
 def main():
-    st.title("🔍 CSV Law Text Search Application")
-    st.markdown("Upload a CSV file and search through legal documents")
+    st.title("🔍 Poverty Search Application")
+    st.markdown("Upload a CSV file with the poverty cases and search through 'THE LAW' sections")
     
     # File upload section
     st.sidebar.header("📁 Load Data")
@@ -182,7 +182,7 @@ def main():
     uploaded_file = st.sidebar.file_uploader(
         "Upload CSV File",
         type=['csv'],
-        help="Upload a CSV file with legal case data"
+        help="Upload a CSV file with poverty related data"
     )
     
     # Option 2: Manual path input
