@@ -106,7 +106,9 @@ def display_result_accordion(row, idx):
     if 'query_word' in row and pd.notna(row['query_word']):
         title_parts.append(f"- Query: '{row['query_word']}'")
     
-    title = " ".join(title_parts) if title_parts else f"Record {idx + 1}"
+    # Use itemid for unique identification if available
+    record_id = row['itemid'] if 'itemid' in row and pd.notna(row['itemid']) else idx + 1
+    title = " ".join(title_parts) if title_parts else f"Record {record_id}"
     
     with st.expander(f"📄 {title}"):
         # Display metadata in columns
@@ -155,10 +157,17 @@ def display_result_accordion(row, idx):
             law_text = str(row['THE_LAW'])
             
             # Show preview (first 1000 characters)
+            # Use itemid + query_word for the key to ensure uniqueness (same itemid can match multiple queries)
+            itemid_part = row['itemid'] if 'itemid' in row and pd.notna(row['itemid']) else f"idx_{idx}"
+            query_part = row['query_word'] if 'query_word' in row and pd.notna(row['query_word']) else ""
+            # Create a unique key by combining itemid and query_word (sanitize query_word for key use)
+            query_sanitized = str(query_part).replace(" ", "_").replace("'", "").replace('"', '')[:20]
+            unique_key = f"{itemid_part}_{query_sanitized}" if query_part else str(itemid_part)
+            
             if len(law_text) > 1000:
                 st.write(law_text[:1000] + "...")
                 with st.expander("Click to view full text"):
-                    st.text_area("Full Text", law_text, height=300, key=f"law_text_{idx}")
+                    st.text_area("Full Text", law_text, height=300, key=f"law_text_{unique_key}")
             else:
                 st.write(law_text)
 
@@ -416,6 +425,7 @@ def main():
         # Display results in accordion format
         for idx, (_, row) in enumerate(paginated_results.iterrows()):
             display_result_accordion(row, start_record + idx - 1)
+            
         
         # Also show as dataframe table
         st.markdown("---")
