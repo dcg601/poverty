@@ -95,7 +95,7 @@ def paginate_dataframe(df, page_size, page_num):
 def _preprocess_appno(appno) -> str:
     # short hack to display only the first casenos if there are more than one assigned
     appnos = appno.split(';')
-    appnos_str = f"{';'.join(appnos[1:4])} and others" if len(appnos) > 3 else ';'.join(appnos)
+    appnos_str = f"{';'.join(appnos[:3])} and others" if len(appnos) > 3 else ';'.join(appnos)
 
     return appnos_str
 
