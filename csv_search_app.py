@@ -92,16 +92,24 @@ def paginate_dataframe(df, page_size, page_num):
     end_idx = start_idx + page_size
     return df.iloc[start_idx:end_idx]
 
+def _preprocess_appno(appno) -> str:
+    # short hack to display only the first casenos if there are more than one assigned
+    appnos = appno.split(';')
+    appnos_str = f"{';'.join(appnos[1:4])} and others" if len(appnos) > 3 else ';'.join(appnos)
+
+    return appnos_str
+
 def display_result_accordion(row, idx):
     """Display a single result in an accordion/expander"""
     # Create a meaningful title
     title_parts = []
     
     if 'appno' in row and pd.notna(row['appno']):
-        title_parts.append(f"Case {row['appno']}")
+        appnos_str = _preprocess_appno(row['appno'])
+        title_parts.append(f"Case {appnos_str}")
     
     if 'year' in row and pd.notna(row['year']):
-        title_parts.append(f"({row['year']})")
+        title_parts.append(f"- Year: ({row['year']})")
     
     if 'query_word' in row and pd.notna(row['query_word']):
         title_parts.append(f"- Query: '{row['query_word']}'")
@@ -118,7 +126,8 @@ def display_result_accordion(row, idx):
             if 'itemid' in row and pd.notna(row['itemid']):
                 st.markdown(f"**Item ID:** {row['itemid']}")
             if 'appno' in row and pd.notna(row['appno']):
-                st.markdown(f"**Application No:** {row['appno']}")
+                appnos_str = _preprocess_appno(row['appno'])               
+                st.markdown(f"**Application No:** {appnos_str}")
             if 'year' in row and pd.notna(row['year']):
                 st.markdown(f"**Year:** {row['year']}")
         
