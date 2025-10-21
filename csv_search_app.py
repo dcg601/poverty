@@ -86,6 +86,38 @@ def filter_by_year(df, year_input):
         st.error(f"Error filtering by year: {str(e)}")
         return df
 
+def filter_by_appno(df, appno_input):
+    """Filter dataframe by application number(s)"""
+    if not appno_input or appno_input.strip() == "":
+        return df
+    
+    if 'appno' not in df.columns:
+        return df
+    
+    try:
+        # Split input by semicolon to get individual application numbers
+        appno_list = [appno.strip() for appno in appno_input.split(';') if appno.strip()]
+        
+        if not appno_list:
+            return df
+        
+        # Create a mask that matches any of the application numbers
+        mask = pd.Series([False] * len(df), index=df.index)
+        
+        for appno in appno_list:
+            # Search for each individual application number in the appno column
+            # The appno column may contain multiple values separated by semicolons
+            # We need to check if the search term matches any of the individual values
+            appno_mask = df['appno'].astype(str).apply(
+                lambda x: appno.lower() in [item.strip().lower() for item in str(x).split(';')]
+            )
+            mask = mask | appno_mask
+        
+        return df[mask]
+    except Exception as e:
+        st.error(f"Error filtering by application number: {str(e)}")
+        return df
+
 def paginate_dataframe(df, page_size, page_num):
     """Paginate the dataframe"""
     start_idx = page_num * page_size
@@ -250,6 +282,13 @@ def main():
     col1, col2 = st.columns(2)
     
     with col1:
+        # Application number search
+        appno_search = st.text_input(
+            "Application number:",
+            placeholder="e.g., 12345/67 or 12345/67;23456/78",
+            help="Enter one or more application numbers separated by semicolons"
+        )
+        
         # THE_LAW text search
         law_search = st.text_input(
             "Search in THE_LAW (plain text):",
@@ -309,6 +348,10 @@ def main():
     # Apply filters only when search button is clicked
     if search_button:
         filtered_df = df.copy()
+        
+        # Apply application number filter
+        if appno_search:
+            filtered_df = filter_by_appno(filtered_df, appno_search)
         
         # Apply THE_LAW filter
         if law_search and 'THE_LAW' in filtered_df.columns:
@@ -462,6 +505,7 @@ def main():
     
     1. **Load Data**: Upload a CSV file or enter a file path in the sidebar
     2. **Filter**: Use the search boxes to filter results:
+       - Search by application number (supports multiple numbers separated by semicolons)
        - Search in THE_LAW column (plain text search with word boundaries)
        - Search by article number or text
        - Search in context column (plain text search with word boundaries)
@@ -473,7 +517,8 @@ def main():
     
     ### ℹ️ Features:
     - ✅ File upload or manual path input
-    - ✅ Multiple search filters (THE_LAW, article, context, year, language)
+    - ✅ Multiple search filters (application number, THE_LAW, article, context, year, language)
+    - ✅ Application number search supports multiple values separated by semicolons
     - ✅ Plain text search with word boundaries
     - ✅ Accordion display with full case details
     - ✅ Pagination with customizable page sizes
